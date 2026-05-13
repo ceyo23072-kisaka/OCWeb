@@ -1,4 +1,4 @@
-docker起動後OCWebディレクトリで以下を実行
+# docker起動後OCWebディレクトリで以下を実行
 docker-compose up -d --build
 
 # コンテナが起動しているか確認
