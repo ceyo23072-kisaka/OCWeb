@@ -20,8 +20,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "https://oc-web-oldz.vercel.app/",
-        "https://oc-web-4ddf.vercel.app/"
+        "https://oc-web-oldz.vercel.app",
+        "https://oc-web-4ddf.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
