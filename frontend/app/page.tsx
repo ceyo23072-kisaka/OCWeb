@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import Link from 'next/link';
 import { getApiBaseUrl } from '@/lib/api';
@@ -92,7 +92,7 @@ export default function HomePage() {
           </button>
         </header>
 
-        <section className="grid gap-4 grid-cols-2">
+        <section className="grid gap-4 grid-cols-1 sm:grid-cols-2">
           {loading ? (
             <div className="rounded-3xl border border-slate-200 bg-white p-6 text-center text-slate-500 shadow-sm">読み込み中...</div>
           ) : summary.length === 0 ? (
