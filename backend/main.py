@@ -22,6 +22,7 @@ app.add_middleware(
         "http://localhost:3000",
         "https://oc-web-oldz.vercel.app",
         "https://oc-web-4ddf.vercel.app",
+        "https://oc-web-ttbc.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
