@@ -11,5 +11,5 @@ export const getApiBaseUrl = (): string => {
     return envUrl;
   }
 
-  return envUrl || 'http://localhost:8000';
+  return envUrl || 'https://ocweb-j6t0.onrender.com';
 };
