@@ -2,7 +2,6 @@ services:
   - type: web
     name: ocweb-backend
     runtime: docker
-    rootDir: backend
     envVars:
       - key: ADMIN_PASSWORD
         sync: false
