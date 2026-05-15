@@ -256,3 +256,7 @@ def admin_cancel_booking(request: AdminCancelRequest, authorization: str | None 
 @app.get("/")
 def read_root():
     return {"status": "Running", "message": "OC Reserve API is active"}
+
+@app.head("/")
+def head_root():
+    return {"status": "Running", "message": "OC Reserve API is active"}
