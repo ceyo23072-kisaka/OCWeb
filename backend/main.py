@@ -18,7 +18,11 @@ os.makedirs("data", exist_ok=True)
 # CORSの設定：フロントエンド（React/Next.js）からのアクセスを許可する
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000","https://oc-web-noj5.vercel.app/"],
+    allow_origins=[
+        "http://localhost:3000",
+        "https://oc-web-5gl4.vercel.app",
+        "https://oc-web-noj5.vercel.app"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
