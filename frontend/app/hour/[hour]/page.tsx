@@ -35,6 +35,7 @@ export default function HourDetailPage() {
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [userName, setUserName] = useState('');
   const [userType, setUserType] = useState('Child');
+  const [numPeople, setNumPeople] = useState(1);
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -63,12 +64,14 @@ export default function HourDetailPage() {
 
   const handleReserve = async () => {
     if (!selectedSlot || !userName) return alert('名前を入力してください');
+    if (numPeople < 1 || numPeople > 10) return alert('人数は1～10人で入力してください');
 
     try {
       const response = await axios.post(`${getApiBaseUrl()}/book`, {
         slot_id: selectedSlot.id,
         user_name: userName,
         user_type: userType,
+        num_people: numPeople,
         password,
       });
 
@@ -186,6 +189,27 @@ export default function HourDetailPage() {
                       className="w-full mt-2 rounded-2xl border px-4 py-3 text-slate-900 outline-none ring-1 ring-slate-200 focus:ring-blue-500"
                       placeholder="山田 太郎"
                     />
+                  </label>
+                  <label className="block mb-4">
+                    <span className="text-sm text-slate-600">予約人数</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={numPeople}
+                      onChange={(e) => {
+                        const value = Number(e.target.value);
+                        if (value < 1) {
+                          setNumPeople(1);
+                        } else if (value > 10) {
+                          setNumPeople(10);
+                        } else {
+                          setNumPeople(value);
+                        }
+                      }}
+                      className="w-full mt-2 rounded-2xl border px-4 py-3 text-slate-900 outline-none ring-1 ring-slate-200 focus:ring-blue-500"
+                    />
+                    <p className="mt-2 text-xs text-slate-500">1～10人までで入力してください。</p>
                   </label>
                   <label className="block mb-4">
                     <span className="text-sm text-slate-600">予約用パスワード</span>

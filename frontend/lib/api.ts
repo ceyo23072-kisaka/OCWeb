@@ -1,10 +1,15 @@
 // API ベースURL の取得
 export const getApiBaseUrl = (): string => {
-  // クライアント側 (ブラウザ)
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+
   if (typeof window !== 'undefined') {
-    return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    // ブラウザでは Docker コンテナのホスト名（backend）を解決できないため、
+    // ホストマシンの URL を使うようにします。
+    if (!envUrl || envUrl.includes('backend')) {
+      return `${window.location.protocol}//${window.location.hostname}:8000`;
+    }
+    return envUrl;
   }
 
-  // サーバー側
-  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  return envUrl || 'http://localhost:8000';
 };

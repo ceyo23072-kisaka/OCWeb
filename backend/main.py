@@ -1,10 +1,13 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Header, HTTPException, status
 from datetime import datetime, timedelta
 from typing import List, Optional
 from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
 import json
 import os
+import hmac
+import hashlib
+import secrets
 
 app = FastAPI()
 
@@ -28,6 +31,7 @@ class Slot(BaseModel):
     is_booked: bool = False
     user_name: Optional[str] = None
     user_type: Optional[str] = None # Parent, Child, Both
+    num_people: Optional[int] = None
     password: Optional[str] = Field(default=None, exclude=True)
 
 # 11:00~15:00の10分刻みスロットを生成する関数
@@ -66,6 +70,16 @@ def load_data() -> List[Slot]:
             return generate_slots()
     return generate_slots()
 
+# 管理者認証設定
+ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH")
+DEFAULT_ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
+
+if not ADMIN_PASSWORD_HASH:
+    ADMIN_PASSWORD_HASH = hashlib.sha256(DEFAULT_ADMIN_PASSWORD.encode("utf-8")).hexdigest()
+
+ADMIN_TOKEN_TTL = timedelta(minutes=30)
+admin_tokens: dict[str, datetime] = {}
+
 # サーバー起動時にスロットを読み込んで保持
 temp_db = load_data()
 
@@ -74,11 +88,67 @@ def get_slots():
     """予約枠一覧をフロントエンドに返す"""
     return temp_db
 
+
+def hash_password(password: str) -> str:
+    return hashlib.sha256(password.encode("utf-8")).hexdigest()
+
+
+def verify_admin_password(password: str) -> bool:
+    hashed = hash_password(password)
+    return hmac.compare_digest(hashed, ADMIN_PASSWORD_HASH)
+
+
+def create_admin_token() -> str:
+    token = secrets.token_urlsafe(32)
+    admin_tokens[token] = datetime.utcnow() + ADMIN_TOKEN_TTL
+    return token
+
+
+def verify_admin_token(token: str) -> bool:
+    expires = admin_tokens.get(token)
+    if not expires:
+        return False
+    if datetime.utcnow() > expires:
+        admin_tokens.pop(token, None)
+        return False
+    return True
+
+
+def require_admin_auth(authorization: str | None = Header(None)) -> str:
+    if authorization is None or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="管理者認証が必要です",
+        )
+    token = authorization.split(" ", 1)[1]
+    if not verify_admin_token(token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="管理者トークンが無効です",
+        )
+    return token
+
+
+class AdminLoginRequest(BaseModel):
+    password: str
+
+
+@app.post("/admin/login")
+def admin_login(request: AdminLoginRequest):
+    if not verify_admin_password(request.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="管理者パスワードが無効です",
+        )
+    token = create_admin_token()
+    return {"success": True, "token": token, "expires_in": int(ADMIN_TOKEN_TTL.total_seconds())}
+
 # 予約リクエスト用のデータ構造
 class BookingRequest(BaseModel):
     slot_id: int
     user_name: str
     user_type: str
+    num_people: int
     password: str
 
 # 不適切なワードのリスト
@@ -128,9 +198,12 @@ def book_slot(request: BookingRequest):
                 return {"success": False, "message": "すでに予約されています"}
             if not request.password:
                 return {"success": False, "message": "パスワードを入力してください"}
+            if request.num_people < 1 or request.num_people > 10:
+                return {"success": False, "message": "人数は1～10人で入力してください"}
             slot.is_booked = True
             slot.user_name = request.user_name
             slot.user_type = request.user_type
+            slot.num_people = request.num_people
             slot.password = request.password
             save_data(temp_db)  # データを保存
             return {"success": True, "message": "予約が完了しました"}
@@ -153,6 +226,7 @@ def cancel_booking(request: CancelRequest):
             slot.is_booked = False
             slot.user_name = None
             slot.user_type = None
+            slot.num_people = None
             slot.password = None
             save_data(temp_db)  # データを保存
             return {"success": True, "message": "予約をキャンセルしました"}
@@ -163,8 +237,9 @@ class AdminCancelRequest(BaseModel):
     slot_id: int
 
 @app.post("/admin/cancel")
-def admin_cancel_booking(request: AdminCancelRequest):
+def admin_cancel_booking(request: AdminCancelRequest, authorization: str | None = Header(None)):
     """管理者がパスワードなしで予約をキャンセルする"""
+    require_admin_auth(authorization)
     for slot in temp_db:
         if slot.id == request.slot_id:
             if not slot.is_booked:
@@ -172,6 +247,7 @@ def admin_cancel_booking(request: AdminCancelRequest):
             slot.is_booked = False
             slot.user_name = None
             slot.user_type = None
+            slot.num_people = None
             slot.password = None
             save_data(temp_db)  # データを保存
             return {"success": True, "message": "管理者による予約キャンセルが完了しました"}
