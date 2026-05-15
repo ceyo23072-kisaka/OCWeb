@@ -18,9 +18,11 @@ os.makedirs("data", exist_ok=True)
 # CORSの設定：フロントエンド（React/Next.js）からのアクセスを許可する
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-    "https://oc-web-4ddf.vercel.app/",
-    ]
+    allow_origins=["https://oc-web-4ddf.vercel.app"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 )
 # 予約データの型定義
 class Slot(BaseModel):
