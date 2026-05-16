@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useState } from 'react';
+import { RefreshCw } from 'lucide-react';
 import axios from 'axios';
 import Link from 'next/link';
 import { getApiBaseUrl } from '@/lib/api';
@@ -81,13 +82,17 @@ export default function HomePage() {
       <div className="max-w-6xl mx-auto">
         <header className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-blue-900">オープンキャンパス予約</h1>
-            <p className="mt-3 text-slate-600">1時間ごとの混雑状況を確認し、詳細な10分刻み枠の予約ページに進みます。</p>
+            <h1 className="text-4xl font-bold text-blue-900">NS研究室 個室相談室</h1>
+            <p className="mt-3 text-slate-600">
+              NS研究室では、進路・研究・学生生活に関する個別相談を承っています。<br />
+              10分単位で個室を予約できます。下記の時間帯から空き状況を確認してご予約ください。
+            </p>
           </div>
           <button
             onClick={fetchSlots}
-            className="rounded-lg bg-blue-600 px-4 py-3 text-white hover:bg-blue-700"
+            className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-slate-700 hover:bg-slate-50"
           >
+            <RefreshCw size={16} />
             更新する
           </button>
         </header>
@@ -123,7 +128,7 @@ export default function HomePage() {
                     href={`/hour/${item.hour}`}
                     className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
                   >
-                    詳細へ
+                    受付状況へ
                   </Link>
                 </div>
               </div>

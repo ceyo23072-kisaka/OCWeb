@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import axios from 'axios';
+import { RefreshCw, Minus, Plus } from 'lucide-react';
 import { getApiBaseUrl } from '@/lib/api';
 
 interface Slot {
@@ -18,7 +19,7 @@ const getTimeRange = (startTime: string) => {
   const [hours, minutes] = startTime.split(':').map(Number);
   const start = new Date();
   start.setHours(hours, minutes, 0, 0);
-  const end = new Date(start.getTime() + 10 * 60 * 1000); // 10分加算
+  const end = new Date(start.getTime() + 10 * 60 * 1000);
   const endTime = `${end.getHours().toString().padStart(2, '0')}:${end.getMinutes().toString().padStart(2, '0')}`;
   return `${startTime}～${endTime}`;
 };
@@ -64,7 +65,7 @@ export default function HourDetailPage() {
 
   const handleReserve = async () => {
     if (!selectedSlot || !userName) return alert('名前を入力してください');
-    if (numPeople < 1 || numPeople > 10) return alert('人数は1～10人で入力してください');
+    if (numPeople < 1 || numPeople > 3) return alert('人数は1～3人で入力してください');
 
     try {
       const response = await axios.post(`${getApiBaseUrl()}/book`, {
@@ -80,6 +81,7 @@ export default function HourDetailPage() {
         setSelectedSlot(null);
         setUserName('');
         setPassword('');
+        setNumPeople(1);
         fetchSlots();
       } else {
         alert(response.data.message);
@@ -119,15 +121,19 @@ export default function HourDetailPage() {
       <div className="max-w-6xl mx-auto">
         <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-blue-900">{hour}時台の詳細</h1>
+            <h1 className="text-4xl font-bold text-blue-900">{hour}時台の受付状況</h1>
             <p className="mt-3 text-slate-600">10分刻みの予約状況を確認して、希望の時間を選んでください。</p>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={fetchSlots} className="rounded-lg bg-blue-600 px-4 py-3 text-white hover:bg-blue-700">
+            <button
+              onClick={fetchSlots}
+              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 text-slate-700 hover:bg-slate-50"
+            >
+              <RefreshCw size={16} />
               更新する
             </button>
             <Link href="/" className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-slate-700 hover:bg-slate-100">
-              1時間ごとの一覧へ
+              一覧へ戻る
             </Link>
           </div>
         </header>
@@ -189,28 +195,33 @@ export default function HourDetailPage() {
                       className="w-full mt-2 rounded-2xl border px-4 py-3 text-slate-900 outline-none ring-1 ring-slate-200 focus:ring-blue-500"
                       placeholder="山田 太郎"
                     />
+                    <p className="mt-2 text-xs text-amber-600">※ 入力した名前は他の利用者にも公開されます。</p>
                   </label>
-                  <label className="block mb-4">
+
+                  <div className="mb-4">
                     <span className="text-sm text-slate-600">予約人数</span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={10}
-                      value={numPeople}
-                      onChange={(e) => {
-                        const value = Number(e.target.value);
-                        if (value < 1) {
-                          setNumPeople(1);
-                        } else if (value > 10) {
-                          setNumPeople(10);
-                        } else {
-                          setNumPeople(value);
-                        }
-                      }}
-                      className="w-full mt-2 rounded-2xl border px-4 py-3 text-slate-900 outline-none ring-1 ring-slate-200 focus:ring-blue-500"
-                    />
-                    <p className="mt-2 text-xs text-slate-500">1～10人までで入力してください。</p>
-                  </label>
+                    <div className="mt-2 flex items-center gap-4">
+                      <button
+                        type="button"
+                        onClick={() => setNumPeople((n) => Math.max(1, n - 1))}
+                        className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-40"
+                        disabled={numPeople <= 1}
+                      >
+                        <Minus size={16} />
+                      </button>
+                      <span className="w-8 text-center text-xl font-bold">{numPeople}</span>
+                      <button
+                        type="button"
+                        onClick={() => setNumPeople((n) => Math.min(3, n + 1))}
+                        className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-40"
+                        disabled={numPeople >= 3}
+                      >
+                        <Plus size={16} />
+                      </button>
+                      <span className="text-xs text-slate-500">最大3人まで</span>
+                    </div>
+                  </div>
+
                   <label className="block mb-4">
                     <span className="text-sm text-slate-600">予約用パスワード</span>
                     <input
@@ -221,7 +232,8 @@ export default function HourDetailPage() {
                       placeholder="キャンセル時に使います"
                     />
                   </label>
-                  <div className="mb-6 text-sm text-slate-500">来場者区分</div>
+
+                  <div className="mb-2 text-sm text-slate-600">来場者区分</div>
                   <div className="mb-6 flex gap-2">
                     {['Child', 'Parent', 'Both'].map((type) => (
                       <button
@@ -235,6 +247,7 @@ export default function HourDetailPage() {
                       </button>
                     ))}
                   </div>
+
                   <div className="flex gap-3">
                     <button onClick={() => setSelectedSlot(null)} className="flex-1 rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-700">閉じる</button>
                     <button onClick={handleReserve} className="flex-1 rounded-2xl bg-blue-600 px-4 py-3 text-white">予約する</button>
